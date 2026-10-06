@@ -10,6 +10,34 @@ from psychopy.experiment.exports import IndentingBuffer
 from psychopy.experiment.params import Param
 from psychopy_fastrak.components.fastrakComponent import FastrakDeviceBackend
 
+_env = Environment(
+    loader=PackageLoader('psychopy_ledstrip.components.ledstripComponent'),
+    autoescape=select_autoescape(),
+)
+
+
+def _writeJinjaCode(buff: IndentingBuffer, params: dict, tmpltSource: str):
+    """Write to the experiment python file the Jinja template.
+
+    > [!note]
+    > Many of the other components (plugin or otherwise) use old style python string
+    > replacements. We use Jinja for easier configuration management.
+
+    Parameters
+    ----------
+    buff : IndentingBuffer
+        The output experiment python file buffer.
+
+    params : dict
+        A dictionary with replacement variables.
+
+    tmpltSource : str
+        The path to the jinja template to insert.
+    """
+    template = _env.get_template(tmpltSource)
+    code = template.render(params)
+    buff.writeIndentedLines(code)
+
 
 class LedstripComponent(BaseDeviceComponent):
     """PsychoPy component for collecting streaming data from a Polhemus Ledstrip."""
@@ -130,28 +158,6 @@ class LedstripComponent(BaseDeviceComponent):
             importFrom='psychopy_ledstrip.wrapper',
         )
 
-    def _writeJinjaCode(self, buff: IndentingBuffer, params: dict, tmpltSource: str):
-        """Write to the experiment python file the Jinja template.
-
-        > [!note]
-        > Many of the other components (plugin or otherwise) use old style python string
-        > replacements. We use Jinja for easier configuration management.
-
-        Parameters
-        ----------
-        buff : IndentingBuffer
-            The output experiment python file buffer.
-
-        params : dict
-            A dictionary with replacement variables.
-
-        tmpltSource : str
-            The path to the jinja template to insert.
-        """
-        template = self._env.get_template(tmpltSource)
-        code = template.render(params)
-        buff.writeIndentedLines(code)
-
     def _blockComment(self, buff: IndentingBuffer, content: str) -> None:
         """Insert a block comment into the experiment python file.
 
@@ -168,7 +174,7 @@ class LedstripComponent(BaseDeviceComponent):
             The content of the block comment.
 
         """
-        self._writeJinjaCode(buff, {'content': content}, 'blockComment.jinja')
+        _writeJinjaCode(buff, {'content': content}, 'blockComment.jinja')
 
     def writeStartCode(self, buff):
         """Write code that a component needs at the start of an experiment.
@@ -181,7 +187,7 @@ class LedstripComponent(BaseDeviceComponent):
             The output experiment python file buffer.
         """
         inits = getInitVals(self.params)
-        self._writeJinjaCode(buff, inits, 'start.jinja')
+        _writeJinjaCode(buff, inits, 'start.jinja')
 
     def writeInitCode(self, buff: IndentingBuffer):
         """Write code that a component needs at the init of an experiment.
@@ -194,7 +200,7 @@ class LedstripComponent(BaseDeviceComponent):
             The output experiment python file buffer.
         """
         inits = getInitVals(self.params)
-        self._writeJinjaCode(buff, inits, 'init.jinja')
+        _writeJinjaCode(buff, inits, 'init.jinja')
 
     def writeRoutineStartCode(self, buff: IndentingBuffer):
         """Write code that a component needs at the start of a routine.
@@ -207,7 +213,7 @@ class LedstripComponent(BaseDeviceComponent):
             The output experiment python file buffer.
         """
         self.writeParamUpdates(buff, updateType='set every repeat')
-        self._writeJinjaCode(buff, self.params.copy(), 'routineStart.jinja')
+        _writeJinjaCode(buff, self.params.copy(), 'routineStart.jinja')
 
     def writeFrameCode(self, buff: IndentingBuffer):
         """Write code that a component needs during a frame of a routine.
@@ -225,19 +231,19 @@ class LedstripComponent(BaseDeviceComponent):
         self._blockComment(buff, f'{self.params["name"]} start frame')
         indent = self.writeStartTestCode(buff)
         if indent:
-            self._writeJinjaCode(buff, self.params.copy(), 'firstFrame.jinja')
+            _writeJinjaCode(buff, self.params.copy(), 'firstFrame.jinja')
             buff.setIndentLevel(-indent, relative=True)
 
         self._blockComment(buff, f'{self.params["name"]} active frame')
         indent = self.writeActiveTestCode(buff)
         if indent:
-            self._writeJinjaCode(buff, self.params.copy(), 'activeFrame.jinja')
+            _writeJinjaCode(buff, self.params.copy(), 'activeFrame.jinja')
             buff.setIndentLevel(-indent, relative=True)
 
         self._blockComment(buff, f'{self.params["name"]} stop frame')
         indent = self.writeStopTestCode(buff)
         if indent:
-            self._writeJinjaCode(buff, self.params.copy(), 'finalFrame.jinja')
+            _writeJinjaCode(buff, self.params.copy(), 'finalFrame.jinja')
             buff.setIndentLevel(-indent, relative=True)
 
         self._blockComment(buff, f'End {self.params["name"]} frame updates')
@@ -253,7 +259,7 @@ class LedstripComponent(BaseDeviceComponent):
             The output experiment python file buffer.
         """
         # create a copy of params so that we can safely edit stuff
-        self._writeJinjaCode(buff, self.params.copy(), 'routineEnd.jinja')
+        _writeJinjaCode(buff, self.params.copy(), 'routineEnd.jinja')
 
 
 class LedstripDeviceBackend(DeviceBackend):
@@ -294,7 +300,7 @@ class LedstripDeviceBackend(DeviceBackend):
             9600,
             valType='code',
             inputType='single',
-            label='Number of LED',
+            label='Baudrate',
             hint="""Keys to treat as buttons (in order of what button index you want them to be). 
                 Must be the same length as the number of buttons.""",
         )
@@ -364,7 +370,13 @@ class LedstripDeviceBackend(DeviceBackend):
         buff : IndentingBuffer
             The output experiment python file buffer.
         """
-        self.writeBaseDeviceCode(buff, close=True)
+        self.writeBaseDeviceCode(buff, close=False)
+
+        _writeJinjaCode(buff, self.params, 'deviceBackend/paramInit.jinja')
+        # if close requested, add closing bracket
+        code = ')\n'
+        buff.writeIndentedLines(code)
+        _writeJinjaCode(buff, self.params, 'deviceBackend/init.jinja')
 
 
 LedstripComponent.registerBackend(LedstripDeviceBackend)
