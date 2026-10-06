@@ -3,6 +3,7 @@
 from lib2to3.pytree import Base
 from pathlib import Path
 
+from fastrakSerialDriver.fastrakPosition import FastrakPostion
 from psychopy import constants, logging
 from psychopy.experiment import Experiment
 from psychopy.hardware import DeviceManager
@@ -13,8 +14,23 @@ from ..hardware import LedstripHardwareDevice
 
 
 class LedFastrakListner(BaseListener):
+    _lastPos: FastrakPostion | None
+
     def __init__(self):
         BaseListener.__init__(self)
+        self._lastPos = None
+
+    @property
+    def position(self) -> FastrakPostion | None:
+        """Get the current/last position reported by the configured fastrak device.
+
+        Returns
+        -------
+        FastrakPostion | None
+                When present the last known position of the Fastrak device. Otherwise, `None`.
+
+        """
+        return self._lastPos
 
     def receiveMessage(self, message):
         """
@@ -25,8 +41,7 @@ class LedFastrakListner(BaseListener):
         message
             Message received.
         """
-        with open('./data/out.log', 'a') as file:
-            file.write(f'{message}\n=============\n\n')
+        self._lastPos = message.value
 
 
 class LedstripWrapper:
@@ -54,13 +69,14 @@ class LedstripWrapper:
     _ledDevice: LedstripHardwareDevice
     _fastrakDevice: FastrakHardwareDevice
     _listener: LedFastrakListner
-    _outputPath: Path
     _status: int
     _hasDeviceLock: bool
     _counter: int
 
     def __init__(
-        self, ledDevice: str, fastrakDevice: str, outputDir: str = '.'
+        self,
+        ledDevice: str,
+        fastrakDevice: str,
     ) -> None:
         """Initialize the wrapper object.
 
@@ -69,15 +85,12 @@ class LedstripWrapper:
         device : str
             The name of the hardware device to wrap.
 
-        outputDir : str
-            The path (relative to the data directory) to store a data file.
         """
         if not isinstance(ledDevice, str) or ledDevice not in DeviceManager.devices:
             raise ValueError(
                 f"Could not find device named '{ledDevice}', make sure it has been set up in DeviceManager."
             )  # TODO: Add specific exception object
 
-        self._outputPath = Path(outputDir)
         self._ledDevice = DeviceManager.getDevice(ledDevice)
         self._fastrakDevice = DeviceManager.getDevice(fastrakDevice)
         self._listener = LedFastrakListner()
@@ -102,3 +115,53 @@ class LedstripWrapper:
     def status(self, status: int) -> None:
         """Set the wrapper Status attribute."""
         self._status = status
+
+    def sendLedState(self) -> None:
+        if self._listener.position is not None:
+            self._ledDevice.setLedState(pos=self._listener.position)
+
+    def reset(self) -> None:
+        """Reset this object to a state it can collect another stream sample.
+
+        Between repeated trials and routines within an experiment objects are reused. There's no
+        good way to handle the behavior as it stands instead we initialize the least number of
+        objects and explicitly reset their state when needed.
+
+        Parameters
+        ----------
+        outputDir : None | str
+            The path (relative to the data directory) to store a data file. Alternatively, `None` in
+            the case the directory should remain unchanged.
+        """
+        # If we have the lock that's a problem. Locks need to be released before reset.
+        if not self._hasDeviceLock:
+            raise ValueError(
+                f"'{self._ledDevice.name}' does not have the stream lock and can't be reset."
+            )  # TODO: Add specific exception object
+
+        # Try to unlock the fastrak
+        if not self._ledDevice.unlock():
+            raise ValueError(
+                f"'{self._ledDevice.name}' is still locked."
+            )  # TODO: Add specific exception object
+
+        self._hasDeviceLock = False
+
+    def startup(self) -> None:
+        """Assert the state of the wrapped device and obtain lock."""
+        logging.info(f'Startup the fastrak')
+
+        # If we have the lock that's a problem. We must already be running.
+        if self._hasDeviceLock:
+            raise ValueError(
+                f"'{self._ledDevice.name}' already has the stream lock."
+            )  # TODO: Add specific exception object
+
+        # If we can't lock the Fastrak that's a problem. Someone else must be using the Fastrak.
+        if not self._ledDevice.lock():
+            raise ValueError(
+                f"'{self._ledDevice.name}' is locked."
+            )  # TODO: Add specific exception object
+
+        self._hasDeviceLock = True
+        self._ledDevice.startup()

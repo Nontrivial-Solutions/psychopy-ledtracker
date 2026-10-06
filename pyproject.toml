@@ -8,9 +8,9 @@ readme = "docs/README.md"
 requires-python = ">=3.10"
 dependencies = [
   "jinja2>=3.1.6",
-  "psychopy-fastrak",
+  "psychopy-fastrak>=0.0.0",
   "psychopy-lib>=2026.1.3",
-  "slasd>=0.0.0",
+  "slasd>=1.2.0",
 ]
 dynamic = ["version"]  # Remove any static version = "..." line
 
@@ -130,7 +130,6 @@ mkdocs-bibtex = { git = "https://github.com/Joecstarr/mkdocs-bibtex" }
 mkdocs-author-plugin = { git = "https://github.com/Joecstarr/mkdocs-author-plugin" }
 markdown-gfm-admonition = { git = "https://github.com/Joecstarr/markdown-gfm-admonition" }
 mkdocs-include-dir-to-nav = { git = "https://github.com/Joecstarr/mkdocs_include_dir_to_nav" }
-psychopy-fastrak = { git = "https://github.com/Nontrivial-Solutions/psychopy-fastrak", rev = "plugin" }
 
 [tool.uv-dynamic-versioning]
 style = "semver"  # also "semver" or "pvp"

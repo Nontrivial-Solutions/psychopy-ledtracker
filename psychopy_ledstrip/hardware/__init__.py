@@ -4,6 +4,7 @@ from fastrakSerialDriver.fastrakPosition import FastrakPostion
 from psychopy import logging
 from psychopy.hardware.base import BaseDevice
 from serial.tools import list_ports
+from slasd.commands.support import LedColor
 from slasd.fastrakAnimator import FastrakAnimationDevice
 
 
@@ -34,10 +35,11 @@ class LedstripHardwareDevice(BaseDevice):
     _is_locked: bool
     _is_setup: bool
     _ledStrip: FastrakAnimationDevice
+    _port: str
     _angleToLight: int
-    _colorR: int
-    _colorG: int
-    _colorB: int
+    _ledCount: int
+    _ledCenterIdx: int
+    _color: LedColor
 
     def __init__(self, *args, **kwargs):
         """Initialize a Psychopy hardware object for a Ledstrip."""
@@ -48,26 +50,72 @@ class LedstripHardwareDevice(BaseDevice):
             raise Exception(
                 'Port input for Fastrak is not a string.'
             )  # TODO: Add specific Exception
+        self._port = port
 
         baudrate = kwargs.get('baudrate')
         if not isinstance(baudrate, int):
             raise Exception(
                 'Baudrate for Fastrak is not valid.'
             )  # TODO: Add specific Exception
+        self._baud = baudrate
 
         ledCount = kwargs.get('ledCount')
         if not isinstance(ledCount, int):
             raise Exception(
                 'Baudrate for Fastrak is not valid.'
             )  # TODO: Add specific Exception
+        self._ledCount = ledCount
+
+        ledCenter = kwargs.get('ledCenter')
+        if not isinstance(ledCenter, int):
+            raise Exception(
+                'Baudrate for Fastrak is not valid.'
+            )  # TODO: Add specific Exception
+        self._ledCenterIdx = ledCenter
+
+        angle2light = kwargs.get('angle2light')
+        if not isinstance(angle2light, int):
+            raise Exception(
+                'Baudrate for Fastrak is not valid.'
+            )  # TODO: Add specific Exception
+        self._angleToLight = angle2light
+
+        colorR = kwargs.get('colorR')
+        if not isinstance(colorR, int):
+            raise Exception(
+                'Baudrate for Fastrak is not valid.'
+            )  # TODO: Add specific Exception
+
+        colorG = kwargs.get('colorG')
+        if not isinstance(colorG, int):
+            raise Exception(
+                'Baudrate for Fastrak is not valid.'
+            )  # TODO: Add specific Exception
+
+        colorB = kwargs.get('colorB')
+        if not isinstance(colorB, int):
+            raise Exception(
+                'Baudrate for Fastrak is not valid.'
+            )  # TODO: Add specific Exception
+        self._color = LedColor(red=colorR, green=colorG, blue=colorB)
 
         # Create a driver instance for the device.
         self._name = f'Ledstrip-{port}_{baudrate}KHz'
         self._is_setup = False
-        self._baud = baudrate
-        self._ledStrip = FastrakAnimationDevice(
-            COMport=port, baud=baudrate, ledCount=ledCount, setup=False
+        ledStrip = FastrakAnimationDevice.create_valid_device(
+            COMport=port,
+            baud=baudrate,
+            timeout=1,
+            ledCount=self._ledCount,
+            setup=False,
+            color=self._color,
         )
+        if ledStrip is not None:
+            self._ledStrip = ledStrip
+        else:
+            raise Exception(
+                'Unable to create a Fastrak driver instance.'
+            )  # TODO: Add specific Exception object
 
     def isSameDevice(self, other: 'LedstripHardwareDevice') -> bool:
         """Determine whether this object represents the same physical device as a given `other` object.
@@ -128,9 +176,38 @@ class LedstripHardwareDevice(BaseDevice):
     def setLedState(self, pos: FastrakPostion) -> None:
 
         self._ledStrip.compNSndState(
-            posData=pos,
-            angleToLight=self._angleToLight,
-            colorR=self._colorR,
-            colorG=self._colorG,
-            colorB=self._colorB,
+            posData=pos, angleToLight=self._angleToLight, zeroLED=self._ledCenterIdx
         )
+
+    def lock(self) -> bool:
+        """Acquire the Fastrak device lock.
+
+        Returns
+        -------
+        bool
+            Returns True when lock is acquired, False otherwise.
+        """
+        if self._is_locked:
+            return False
+        self._is_locked = True
+        return True
+
+    def unlock(self) -> bool:
+        """Release the Fastrak device lock.
+
+        Returns
+        -------
+        bool
+            Returns True when lock is released, False otherwise.
+        """
+        if self._is_locked:
+            self._is_locked = False
+            return True
+        return False
+
+    def startup(self):
+        """Set up the Fastrak device for streaming."""
+        if not self._is_setup:
+            self._ledStrip.connect()
+        self._ledStrip.setOff()
+        self._is_setup = True
