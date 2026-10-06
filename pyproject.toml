@@ -22,7 +22,6 @@ LedstripDeviceBackend = "psychopy_ledstrip.components.ledstripComponent:Ledstrip
 [project.entry-points."psychopy.hardware"]
 # if you want something to be importable from psychopy.hardware, add it here
 LedstripHardwareDevice = "psychopy_ledstrip.hardware:LedstripHardwareDevice"
-LedstripResponse = "psychopy_ledstrip.hardware:LedstripResponse"
 
 [dependency-groups]
 dev = [
