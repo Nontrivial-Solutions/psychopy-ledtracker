@@ -102,6 +102,7 @@ class LedstripHardwareDevice(BaseDevice):
         # Create a driver instance for the device.
         self._name = f'Ledstrip-{port}_{baudrate}KHz'
         self._is_setup = False
+        self._is_locked = False
         ledStrip = FastrakAnimationDevice.create_valid_device(
             COMport=port,
             baud=baudrate,
