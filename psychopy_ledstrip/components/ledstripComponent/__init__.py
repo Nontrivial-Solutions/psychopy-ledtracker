@@ -290,6 +290,69 @@ class LedstripDeviceBackend(DeviceBackend):
             'name',
         ]
 
+        self.params['baudrate'] = Param(
+            9600,
+            valType='code',
+            inputType='single',
+            label='Number of LED',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
+        self.params['ledCount'] = Param(
+            0,
+            valType='code',
+            inputType='single',
+            label='Number of LED',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
+        self.params['ledCenter'] = Param(
+            0,
+            valType='code',
+            inputType='single',
+            label='LED to treat as zero',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
+        self.params['angle2light'] = Param(
+            10,
+            valType='code',
+            inputType='single',
+            label='Angle of LEDs to light',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
+        self.params['colorR'] = Param(
+            0,
+            valType='code',
+            inputType='single',
+            label='Red Value',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
+        self.params['colorG'] = Param(
+            0,
+            valType='code',
+            inputType='single',
+            label='Green Value',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
+        self.params['colorB'] = Param(
+            0,
+            valType='code',
+            inputType='single',
+            label='Blue Value',
+            hint="""Keys to treat as buttons (in order of what button index you want them to be). 
+                Must be the same length as the number of buttons.""",
+        )
+
     def writeDeviceCode(self, buff: IndentingBuffer):
         """Write code that the hardware device needs to be registered by PsychoPy during an experiment.
 

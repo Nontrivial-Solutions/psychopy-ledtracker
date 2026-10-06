@@ -73,11 +73,7 @@ class LedstripWrapper:
     _hasDeviceLock: bool
     _counter: int
 
-    def __init__(
-        self,
-        ledDevice: str,
-        fastrakDevice: str,
-    ) -> None:
+    def __init__(self, ledDevice: str, fastrakDevice: str) -> None:
         """Initialize the wrapper object.
 
         Parameters
