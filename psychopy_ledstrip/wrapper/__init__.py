@@ -136,10 +136,6 @@ class LedstripWrapper:
             return True
         return False
 
-    def sendLedState(self) -> None:
-        if self._listener.position is not None:
-            self._ledDevice.setLedState(pos=self._listener.position)
-
     def reset(self) -> None:
         """Reset this object to a state it can collect another stream sample.
 
@@ -185,3 +181,16 @@ class LedstripWrapper:
 
         self._deviceLockStatus = LockStatus.IS_LOCKED
         self._ledDevice.startup()
+
+    def step(self) -> None:
+        """Assert the state of the wrapped device and obtain lock."""
+        logging.info(f'Startup the fastrak')
+
+        # If we have the lock that's a problem. We must already be running.
+        if self._deviceLockStatus != LockStatus.IS_LOCKED:
+            raise ValueError(
+                f"'{self._ledDevice.name}' already has the stream lock."
+            )  # TODO: Add specific exception object
+
+        if self._listener.position is not None:
+            self._ledDevice.setLedState(pos=self._listener.position)
