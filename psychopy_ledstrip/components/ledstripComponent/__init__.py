@@ -372,8 +372,9 @@ class LedstripDeviceBackend(DeviceBackend):
         """
         self.writeBaseDeviceCode(buff, close=False)
 
+        buff.setIndentLevel(1, relative=True)
         _writeJinjaCode(buff, self.params, 'deviceBackend/paramInit.jinja')
-        # if close requested, add closing bracket
+        buff.setIndentLevel(-1, relative=True)
         code = ')\n'
         buff.writeIndentedLines(code)
         _writeJinjaCode(buff, self.params, 'deviceBackend/init.jinja')
