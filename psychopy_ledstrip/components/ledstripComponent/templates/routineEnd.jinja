@@ -1,5 +1,3 @@
 # Routine end for {{name}}
-#if {{name}}.is_streaming:
-#    logging.info("Save recording for {{name}} during routine end")
-#    {{name}}.saveRecording(thisExp)
-#    {{name}}.reset()
+if {{name}}.hasLock:
+    {{name}}.reset()

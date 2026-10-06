@@ -1,5 +1,7 @@
 """Marks the package containing the Psychopy Ledstrip plugin hardware wrapper."""
 
+from asyncio import Lock
+from enum import Enum
 from lib2to3.pytree import Base
 from pathlib import Path
 
@@ -11,6 +13,11 @@ from psychopy.hardware.listener import BaseListener
 from psychopy_fastrak.hardware import FastrakHardwareDevice
 
 from ..hardware import LedstripHardwareDevice
+
+
+class LockStatus(Enum):
+    IS_LOCKED = 0
+    NOT_LOCKED = 1
 
 
 class LedFastrakListner(BaseListener):
@@ -70,7 +77,7 @@ class LedstripWrapper:
     _fastrakDevice: FastrakHardwareDevice
     _listener: LedFastrakListner
     _status: int
-    _hasDeviceLock: bool
+    _deviceLockStatus: LockStatus
     _counter: int
 
     def __init__(self, ledDevice: str, fastrakDevice: str) -> None:
@@ -92,6 +99,7 @@ class LedstripWrapper:
         self._listener = LedFastrakListner()
         self._fastrakDevice.addListener(self._listener)
         self._status = constants.NOT_STARTED
+        self._deviceLockStatus = LockStatus.NOT_LOCKED
 
     @property
     def status(self) -> int:
@@ -112,6 +120,22 @@ class LedstripWrapper:
         """Set the wrapper Status attribute."""
         self._status = status
 
+    @property
+    def hasLock(self) -> bool:
+        """Wrapper Status attribute.
+
+        Returns
+        -------
+        int
+            Indicates the status of the wrapper.
+            > [!warning]
+            > This is **NOT** an [Enum](https://docs.python.org/3/library/enum.html).
+
+        """
+        if self._deviceLockStatus == LockStatus.IS_LOCKED:
+            return True
+        return False
+
     def sendLedState(self) -> None:
         if self._listener.position is not None:
             self._ledDevice.setLedState(pos=self._listener.position)
@@ -130,7 +154,7 @@ class LedstripWrapper:
             the case the directory should remain unchanged.
         """
         # If we have the lock that's a problem. Locks need to be released before reset.
-        if not self._hasDeviceLock:
+        if self._deviceLockStatus != LockStatus.IS_LOCKED:
             raise ValueError(
                 f"'{self._ledDevice.name}' does not have the stream lock and can't be reset."
             )  # TODO: Add specific exception object
@@ -141,14 +165,14 @@ class LedstripWrapper:
                 f"'{self._ledDevice.name}' is still locked."
             )  # TODO: Add specific exception object
 
-        self._hasDeviceLock = False
+        self._deviceLockStatus = LockStatus.NOT_LOCKED
 
     def startup(self) -> None:
         """Assert the state of the wrapped device and obtain lock."""
         logging.info(f'Startup the fastrak')
 
         # If we have the lock that's a problem. We must already be running.
-        if self._hasDeviceLock:
+        if self._deviceLockStatus == LockStatus.IS_LOCKED:
             raise ValueError(
                 f"'{self._ledDevice.name}' already has the stream lock."
             )  # TODO: Add specific exception object
@@ -159,5 +183,5 @@ class LedstripWrapper:
                 f"'{self._ledDevice.name}' is locked."
             )  # TODO: Add specific exception object
 
-        self._hasDeviceLock = True
+        self._deviceLockStatus = LockStatus.IS_LOCKED
         self._ledDevice.startup()
