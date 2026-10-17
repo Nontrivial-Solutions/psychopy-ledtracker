@@ -180,6 +180,9 @@ class LedstripHardwareDevice(BaseDevice):
             posData=pos, angleToLight=self._angleToLight, zeroLED=self._ledCenterIdx
         )
 
+    def setArryOff(self) -> None:
+        self._ledStrip.setOff()
+
     def lock(self) -> bool:
         """Acquire the Fastrak device lock.
 

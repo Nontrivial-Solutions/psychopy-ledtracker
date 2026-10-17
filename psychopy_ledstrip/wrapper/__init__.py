@@ -149,11 +149,14 @@ class LedstripWrapper:
             The path (relative to the data directory) to store a data file. Alternatively, `None` in
             the case the directory should remain unchanged.
         """
+        logging.info('Reset the LED strip control.')
         # If we have the lock that's a problem. Locks need to be released before reset.
         if self._deviceLockStatus != LockStatus.IS_LOCKED:
             raise ValueError(
                 f"'{self._ledDevice.name}' does not have the stream lock and can't be reset."
             )  # TODO: Add specific exception object
+
+        self._ledDevice.setArryOff()
 
         # Try to unlock the fastrak
         if not self._ledDevice.unlock():
@@ -165,7 +168,7 @@ class LedstripWrapper:
 
     def startup(self) -> None:
         """Assert the state of the wrapped device and obtain lock."""
-        logging.info(f'Startup the fastrak')
+        logging.info('Startup the LED strip.')
 
         # If we have the lock that's a problem. We must already be running.
         if self._deviceLockStatus == LockStatus.IS_LOCKED:
@@ -184,7 +187,7 @@ class LedstripWrapper:
 
     def step(self) -> None:
         """Assert the state of the wrapped device and obtain lock."""
-        logging.info(f'Startup the fastrak')
+        logging.info('Step the LED control.')
 
         # If we have the lock that's a problem. We must already be running.
         if self._deviceLockStatus != LockStatus.IS_LOCKED:

@@ -41,7 +41,7 @@ live: bootstrap
     
 # Run tombi 
 do-tombi:
-    tombi format psychopy_fastrak 
+    tombi format psychopy_ledstrip 
     tombi format docs 
     tombi format ./pyproject.toml 
     tombi format ./.rumdl.toml 
@@ -73,12 +73,12 @@ check-todo:
 
 # Run ruff 
 do-ruff:
-    ruff check --fix psychopy_fastrak 
-    ruff format psychopy_fastrak 
+    ruff check --fix psychopy_ledstrip 
+    ruff format psychopy_ledstrip 
 
 # Generate warnings from ruff
 warning-ruff:
-    -ruff check psychopy_fastrak --output-format json -o .build/ruff/ruff.json | ciqar -r ruff:.build/ruff/ruff.json -s psychopy_fastrak -o .build/ruff
+    -ruff check psychopy_ledstrip --output-format json -o .build/ruff/ruff.json | ciqar -r ruff:.build/ruff/ruff.json -s psychopy_ledstrip -o .build/ruff
 
 # Cyclically Generate warnings from ruff 
 c-warning-ruff:
