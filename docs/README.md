@@ -37,8 +37,8 @@ cd $env:APPDATA\psychopy4
 
 The following document describes the "rules" and expectation for the tool. The
 ["Code Comments"](./lib/files/) page contains the technical context descriptions found in the source
-files. The ["Use Cases"](./use_cases/) page contains a collection of use cases and a use case
-diagram for the tool. The ["Decisions"](./madr/) page contains a collection of
+files. The ["Use Cases"](./use_cases/) page contains a collection of usecases and a usecase diagram
+for the tool. The ["Decisions"](./madr/) page contains a collection of
 [architectural decision records](https://adr.github.io/madr/) [@Kopp2018] giving context on why this
 tool is the way it is.
 
@@ -157,7 +157,7 @@ There will be no unit testings for the project.
 
 #### Functional Requirements
 
-Requirements are documented by [ADR](./content/madr/index.md). Use cases not covered by generated
+Requirements are documented by [ADR](./content/madr/index.md). Usecases not covered by generated
 code are omitted as they follow the PsychoPy plugin design requirements.
 
 ```mermaid
@@ -167,9 +167,12 @@ flowchart LR
   CLS(["Command LED State"])
   CLF(["Command LED Off"])
   CLN(["Command LED On"])
-  SLS(["Setup LED Strip"])
-  RLS(["Reset LED Strip"])
+  SLS(["Setup LED Array"])
+  RLS(["Reset LED Array"])
   GFP(["Get Fastrak Position"])
+  VLS(["Validate LED State"])
+  SLC(["Set LED Count"])
+  SLAO(["Command LED Array Off"])
 
   aT --> CLN 
   aT --> CLF
@@ -179,6 +182,12 @@ flowchart LR
 
   CLN -. include .-> CLS
   CLF -. include .-> CLS
+  SLAO -. include .-> CLS
+  SLC -. include .-> CLS
+  CLS -. include .-> VLS
+  RLS -. include .-> SLAO 
+  SLS -. include .-> SLC 
+  SLS -. include .-> SLAO 
 ```
 
 ##### Architectural Decisions
@@ -211,7 +220,7 @@ The following is the order of operations for the proposal of a MADR:
 
 ##### Colors
 
-Diagrams included in documentation for features (use case and unit descriptions) are expected to use
+Diagrams included in documentation for features (usecase and unit descriptions) are expected to use
 the [COLORS](https://clrs.cc) color palette.
 
 ##### Technologies
