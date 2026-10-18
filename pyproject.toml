@@ -8,6 +8,8 @@ readme = "docs/README.md"
 requires-python = ">=3.10"
 dependencies = [
   "jinja2>=3.1.6",
+  "mkdocs-api-autonav>=0.4.0",
+  "mkdocs-awesome-nav>=3.3.0",
   "psychopy-fastrak",
   "psychopy-lib>=2026.1.3",
 ]

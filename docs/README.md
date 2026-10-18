@@ -1,12 +1,33 @@
 ---
-title: Lab tooling
+title: LED Head Tracking Psychopy Plugin 
 authors:
-  - joe_starr
+   joe_starr
 ---
+
+![PyPI Version](https://img.shields.io/pypi/v/psychopy-ledstrip)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](<https://opensource.org/licenses/MIT>)
 
 ![hero](./infra/assets/logo.svg)
 
 [![White Logo image](https://brainmade.org/white-logo.svg)](https://brainmade.org)
+
+## Install
+
+To install in a Psychopy Studio environment run the following:
+
+### Command Prompt
+
+```batch
+cd %appdata%\psychopy4
+.uv\uv.exe pip install psychopy-ledstrip --python .\.python\2026.1.3
+```
+
+### PowerShell  
+
+```batch
+cd $env:APPDATA\psychopy4
+./.uv/uv.exe pip install psychopy-ledstrip --python ./.python/2026.1.3
+```
 
 ## Note to Reader
 
@@ -69,13 +90,51 @@ Files and directories shall be lower case, where capital is not required by a to
 `' '`.
 
 ```text
-
-
+📁 .
+├── 📁 .github
+│   ├── 📁 ISSUE_TEMPLATE
+│   ├── 📁 PULL_REQUEST_TEMPLATE
+│   ├── 📁 workflows
+│   └── 📝 pull_request_template.md
+├── 📁 .vscode
+│   └── ⚙️ launch.json
+├── 📁 docs
+│   ├── 📁 content
+│   │   ├── 📁 madr
+│   │   └── 📁 units
+│   ├── 📁 infra
+│   └── 📖 README.md
+├── 📁 psychopy_ledstrip 
+│   ├── 📁 component 
+│   ├── 📁 hardware 
+│   ├── 📁 wrapper 
+│   └── 🐍 __init__.py
+├── 📁 test 
+│   ├── 📁 component 
+│   ├── 📁 hardware 
+│   ├── 📁 wrapper 
+│   ├── 🐍 test_<unit>.py 
+│   └── 🐍 __init__.py
+├── ⚙️ .editorconfig
+├── 🙈 .gitignore
+├── 🛠️ .pre-commit-config.yaml
+├── ⚙️ .rumdl.toml
+├── ❄️ flake.lock
+├── ❄️ flake.nix
+├── 🛠️ Justfile
+├── 📜 LICENSE
+├── 📄 mkdocs.yml
+├── 🐍 pyproject.toml
+└── 🔒 uv.lock
 ```
 
 ### Directories of Interest
 
-- Docs: This directory contains the high level documentation for the tool.
+- docs: This directory contains the high level documentation for the tool.
+- psychopy_ledstrip : This directory contains the source code of the tool.
+- test: This directory contains the test code of the tool.
+- .github: This directory contains the GitHub infrastructure.  
+- .vscode: This directory contains the debugger configuration.  
 
 ### Define a Unit
 
@@ -86,13 +145,41 @@ must be detectable. A segfault is okay, an off by one error that computes the wr
 
 #### Unit Testing
 
+Each internal unit shall have a unit test suite.
+
 #### Integration Testing
+
+The plugin shall have manual integration testing.
 
 ### Requirements
 
+There will be no unit testings for the project.
+
 #### Functional Requirements
 
-##### Use Cases  
+Requirements are documented by [ADR](./content/madr/index.md). Use cases not covered by generated
+code are omitted as they follow the PsychoPy plugin design requirements.
+
+```mermaid
+flowchart LR
+  aT["👤 Time"]
+
+  CLS(["Command LED State"])
+  CLF(["Command LED Off"])
+  CLN(["Command LED On"])
+  SLS(["Setup LED Strip"])
+  RLS(["Reset LED Strip"])
+  GFP(["Get Fastrak Position"])
+
+  aT --> CLN 
+  aT --> CLF
+  aT --> SLS 
+  aT --> RLS 
+  aT --> GFP 
+
+  CLN -. include .-> CLS
+  CLF -. include .-> CLS
+```
 
 ##### Architectural Decisions
 
@@ -142,4 +229,4 @@ the [COLORS](https://clrs.cc) color palette.
 
 ###### Documentation of Implementation
 
-###### Code Style Guide
+Matches the [psychopy-fastrak](https://github.com/Nontrivial-Solutions/psychopy-fastrak) plugin.
