@@ -1,14 +1,14 @@
 ---
-title: Fastrak Component Hardware Wrapper 
+title: LED Array Component Hardware Wrapper 
 authors:
   - joe_starr
-date: 2026-07-13
+date: 2026-10-18
 ---
 
 ## Description
 
-This unit describes the functionality of the Fastrak component hardware wrapper. The class offers a
-simple interface for the Fastrak hardware device to be used in an experiment.
+This unit describes the functionality of the LED array component hardware wrapper. The class offers
+a simple interface for the LED array hardware device to be used in an experiment.
 
 ### Members
 
@@ -21,17 +21,12 @@ an enum of possible states a component can be in. The status is essentially an e
 states a component can be in. Unfortunately, PsychoPy doesn't use an actual enum for this purpose
 but instead a [SimpleNamespace](https://docs.python.org/3/library/types.html#types.SimpleNamespace).
 
-##### Is Streaming
-
-The `is_streaming` member indicates if the wrapped hardware device is streaming.
-
 #### Private Data
 
-- device: A reference to the hardware device that is being wrapped.
-- outputPath: The path where the collected data will be stored.  
-- hasDeviceLock: Indicates if this component wrapper instance holds the lock on the hardware
-    device. Allows multiple components to interact with the same hardware device.
-- counter: Counts the number of data collection sessions this component has completed.  
+- LED Device: A reference to the hardware device that is being wrapped.
+- Fastrak Device: A reference to the Fastrak hardware device supplying the position data.
+- Listener: The callback object that subscribes to the Fastrak position.  
+- Device Lock Status: Indicates if the wrapper has the lock on the linked LED Device
 
 ### Interfaces
 
@@ -39,15 +34,15 @@ The `is_streaming` member indicates if the wrapped hardware device is streaming.
 
 The constructor method takes in a collection of data:
 
-- device: The hardware device to wrap.
-- outputDir: The output directory for data collected by this wrapper.
+- LED Device: The hardware device to wrap.
+- Fastrak Device: A reference to the Fastrak hardware device supplying the position data.
 
 ##### State Machine
 
 ```mermaid
 stateDiagram-v2
     state "Initalize members" as im
-    state "Set state to not started" as ss 
+    state "Subscribe to Fastrak position" as ss 
     [*] --> im
     im --> ss
     ss --> [*]
@@ -56,47 +51,26 @@ stateDiagram-v2
 
 #### Reset
 
-Since wrapper instances are reused between routine instances ([ADR 00004](../../madr/00004_reuse/))
-to simplify how this works we reset the state of the wrapper instead of recreate the wrapper.
-
-Takes an optional `outputDir` as an argument allowing for the wrapper to save to a different
-location.
+Since wrapper instances are reused between routine instances to simplify how this works we reset the
+state of the wrapper instead of recreate the wrapper.
 
 ##### State Machine
 
 ```mermaid
 stateDiagram-v2
-    state "Clear buffer" as ss 
+    state "Set LED off" as ss 
     state "Set does not have lock" as unl 
     state "Emit error" as err 
-    state is_streaming <<choice>> 
     state has_lock <<choice>> 
     state hardware_ulock <<choice>> 
     [*] --> has_lock
-    has_lock --> is_streaming: Has device lock
+    has_lock --> ss: Has device lock
     has_lock --> err: Does not have device lock
-    is_streaming --> ss: Is not streaming
-    is_streaming --> err: Is streaming
     ss --> hardware_ulock
     hardware_ulock --> unl: Hardware lock released 
     hardware_ulock --> err: Hardware lock not released
     unl --> [*]
     err --> [*]
-
-```
-
-#### Dispatch Messages
-
-PsychoPy has a built-in hardware component messaging service. These services must be polled to
-publish state to the "bus".
-
-##### State Machine
-
-```mermaid
-stateDiagram-v2
-    state "Dispatch messages in hardware" as ss 
-    [*] --> ss 
-    ss --> [*]
 ```
 
 #### Startup
@@ -124,86 +98,30 @@ stateDiagram-v2
 
 ```
 
-#### Start Stream
+#### Step
 
-The `startStream` method commands the wrapped hardware device to enter streaming mode.
+The `step` method updates the state of the wrapper based on position every step of the experiment.
 
-##### State Machine
-
-```mermaid
-stateDiagram-v2
-    state "Start stream" as ss 
-    state "Emit error" as err 
-    state is_streaming <<choice>> 
-    state has_lock <<choice>> 
-    [*] --> has_lock
-    has_lock --> is_streaming: Has device lock
-    has_lock --> err: Does not have device lock
-    is_streaming --> ss: Is not streaming
-    is_streaming --> err: Is streaming
-    ss --> [*]
-    err --> [*]
-```
-
-#### End Stream
-
-The `endStream` method commands the wrapped hardware device to exit streaming mode.
+>[!note]
+>
+> An improvement here would be to do this in a thread and not in the same thread as the experiment.
 
 ##### State Machine
 
 ```mermaid
 stateDiagram-v2
-    state "End stream" as ss 
-    state "Await end of stream" as  aeos 
+    state "Update LED array state" as ss 
+    state "Set does not have lock" as unl 
     state "Emit error" as err 
-    state is_streaming <<choice>> 
     state has_lock <<choice>> 
+    state hardware_ulock <<choice>> 
     [*] --> has_lock
-    has_lock --> is_streaming: Has device lock
+    has_lock --> ss: Has device lock
     has_lock --> err: Does not have device lock
-    is_streaming --> ss: Is streaming
-    is_streaming --> err: Is not streaming
-    ss --> aeos
-    aeos --> [*]
+    ss --> hardware_ulock
+    hardware_ulock --> unl: Hardware lock released 
+    hardware_ulock --> err: Hardware lock not released
+    unl --> [*]
     err --> [*]
 ```
 
-#### Save Stream
-
-The `saveRecording` method ends the current streaming session (if active) and saves the last
-streaming session data to the configured file.  
-
-Takes two optional arguments with types:
-
-- `Experiment`: Metadata object containing the context of the current experiment. If present we
-    use the `dataFileName` attribute for naming the output file.
-- `Path`: An output base directory. Defaults to the `./data` directory.
-
-> [!note]
-> 
-> Output path attribute determines where the file should be stored. The data file name is controlled
-> by the stream session counter attribute as well as any naming data from the experiment reference
-> passed to the save `saveRecording` method.
-
-##### State Machine
-
-```mermaid
-stateDiagram-v2
-    state "Create ouput file name" as ss 
-    state "End stream"as es 
-    state "Save data" as sd 
-    state "Increment counter" as ic 
-    state "Emit error" as err 
-    state is_streaming <<choice>> 
-    state has_lock <<choice>> 
-    [*] --> has_lock
-    has_lock --> is_streaming: Has device lock
-    has_lock --> err: Does not have device lock
-    is_streaming --> ss: Is not streaming
-    is_streaming --> es: Is streaming
-    es --> ss
-    ss --> sd
-    sd --> ic
-    ic --> [*]
-    err --> [*]
-```

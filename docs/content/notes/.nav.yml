@@ -1,6 +1,0 @@
-title: Development Notes
-use_index_title: true
-flatten_single_child_sections: true
-nav:
-    - index.md
-    - "**/*.md"
